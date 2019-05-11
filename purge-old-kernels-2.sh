@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 #    purge-old-kernels-2 - remove old kernels and their headers
 #    Copyright (C) 2012: Dustin Kirkland <kirkland@ubuntu.com>
@@ -23,7 +23,7 @@
 # Ensure we're running as root
 if [ "$(id -u)" != 0 ]; then
    echo "ERROR: This script must be run as root.  Hint:" 1>&2
-   echo "  sudo sh $0 $@" 1>&2
+   echo "  sudo sh $0 *" 1>&2
    exit 1
 fi
 
@@ -42,7 +42,7 @@ fi
 KEEP=2
 # NOTE: Any unrecognized option will be passed straight through to apt
 APT_OPTS=
-while [ ! -z "$1" ]; do
+while [ -n "$1" ]; do
    case "$1" in
       --keep)
          # User specified the number of kernels to keep
@@ -57,7 +57,7 @@ while [ ! -z "$1" ]; do
 done
 
 # Build our list of kernel packages to purge
-CANDIDATES=$(ls -tr /boot/vmlinuz-* | head -n -${KEEP} | grep -v "$(uname -r)$" | cut -d- -f2- | awk '{print "linux-image-" $0 " linux-headers-" $0}' )
+CANDIDATES=$(find /boot/vmlinuz-* | head -n -"${KEEP}" | grep -v "$(uname -r)$" | cut -d- -f2- | awk '{print "linux-image-" $0 " linux-headers-" $0}' )
 for c in $CANDIDATES; do
    dpkg-query -s "$c" >/dev/null 2>&1 && PURGE="$PURGE $c"
 done
@@ -67,4 +67,4 @@ if [ -z "$PURGE" ]; then
    exit 0
 fi
 
-apt $APT_OPTS remove --purge $PURGE
+apt "$APT_OPTS" remove --purge "$PURGE"
